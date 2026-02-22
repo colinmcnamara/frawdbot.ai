@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XY3X2YTYH6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XY3X2YTYH6');
+    </script>
+    <title>FrawdBot - Insider Threat Detection for Google Workspace and AI Agents</title>
+    <meta name="description" content="FrawdBot detects insider threats in Google Workspace and monitors AI agent behavior. Built by Self-Improving Code.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #0d1117;
+            --dark-surface: #161b22;
+            --dark-border: #21262d;
+            --green: #2ecc71;
+            --green-dim: #1a7a42;
+            --green-glow: rgba(46, 204, 113, 0.15);
+            --red-accent: #e74c3c;
+            --red-dim: rgba(231, 76, 60, 0.3);
+            --text: #e6edf3;
+            --text-dim: #7d8590;
+            --text-muted: #484f58;
+            --claw-orange: #e67e22;
+            --claw-red: #c0392b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated scan line */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            animation: scan 4s ease-in-out infinite;
+            opacity: 0.6;
+            z-index: 100;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* Terminal grid background */
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--dark-border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--dark-border) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.08;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* The claw logo */
+        .logo-area {
+            margin-bottom: 2rem;
+        }
+
+        .claw-ascii {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.3;
+            color: var(--claw-orange);
+            white-space: pre;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 8px rgba(230, 126, 34, 0.3));
+        }
+
+        .claw-ascii .red { color: var(--claw-red); }
+        .claw-ascii .green { color: var(--green); }
+        .claw-ascii .dim { color: var(--text-muted); }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .brand h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--green), #27ae60);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand .dot-ai {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: var(--text-dim);
+            margin-bottom: 2.5rem;
+            line-height: 1.5;
+        }
+
+        .tagline strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .tagline-sub {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 400;
+            font-style: italic;
+            color: var(--claw-orange);
+            letter-spacing: 0.5px;
+        }
+
+        /* Two-threat split panel */
+        .two-threats {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 0;
+            margin-bottom: 2.5rem;
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .threat-panel {
+            padding: 1.5rem;
+        }
+
+        .threat-panel h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+        }
+
+        .threat-panel.human h3 {
+            color: var(--red-accent);
+        }
+
+        .threat-panel.agent h3 {
+            color: var(--claw-orange);
+        }
+
+        .threat-panel p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .threat-divider {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            gap: 0.25rem;
+            background: var(--dark-border);
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--claw-orange);
+        }
+
+        .threat-divider .pipe {
+            font-size: 1rem;
+            opacity: 0.4;
+            line-height: 1;
+        }
+
+        .threat-divider .divider-icon {
+            font-size: 1.5rem;
+            filter: drop-shadow(0 0 6px rgba(230, 126, 34, 0.4));
+            line-height: 1;
+        }
+
+        /* Terminal block */
+        .terminal {
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 2.5rem;
+        }
+
+        .terminal-bar {
+            background: var(--dark-border);
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: var(--red-accent); }
+        .terminal-dot.yellow { background: #f1c40f; }
+        .terminal-dot.green { background: var(--green); }
+
+        .terminal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: 0.5rem;
+        }
+
+        .terminal-body {
+            padding: 1.25rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+        }
+
+        .terminal-body .prompt {
+            color: var(--green);
+        }
+
+        .terminal-body .cmd {
+            color: var(--text);
+        }
+
+        .terminal-body .output {
+            color: var(--text-dim);
+        }
+
+        .terminal-body .highlight {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .terminal-body .alert {
+            color: var(--red-accent);
+        }
+
+        .terminal-body .warn {
+            color: var(--claw-orange);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--green);
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Status indicators */
+        .status-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-badge .dot.green {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .status-badge .dot.orange {
+            background: var(--claw-orange);
+            box-shadow: 0 0 6px var(--claw-orange);
+            animation-delay: 0.5s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-badge .label {
+            color: var(--text-dim);
+        }
+
+        .status-badge .value {
+            color: var(--text);
+        }
+
+        /* CTA area */
+        .cta {
+            margin-bottom: 3rem;
+        }
+
+        .cta p {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--green);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            padding: 0.6rem 1.25rem;
+            border: 1px solid var(--green-dim);
+            border-radius: 6px;
+            transition: all 0.2s;
+            background: var(--green-glow);
+        }
+
+        .cta-link:hover {
+            background: rgba(46, 204, 113, 0.25);
+            border-color: var(--green);
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.15);
+        }
+
+        /* Footer */
+        .footer {
+            padding-top: 2rem;
+            border-top: 1px solid var(--dark-border);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .footer-brand a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-brand a:hover {
+            color: var(--green);
+        }
+
+        .footer-right {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Touch controls for mobile game */
+        .touch-controls {
+            display: none;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .touch-controls.active {
+            display: grid;
+        }
+
+        .touch-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            cursor: pointer;
+            transition: background 0.1s, border-color 0.1s;
+        }
+
+        .touch-btn:active, .touch-btn.pressed {
+            background: var(--green-glow);
+            border-color: var(--green-dim);
+            color: var(--green);
+        }
+
+        .touch-btn.fire {
+            color: var(--claw-orange);
+            grid-column: span 2;
+        }
+
+        .touch-btn.fire:active, .touch-btn.fire.pressed {
+            background: rgba(230, 126, 34, 0.15);
+            border-color: var(--claw-orange);
+        }
+
+        .touch-btn.quit {
+            color: var(--red-accent);
+        }
+
+        .touch-btn.quit:active {
+            background: var(--red-dim);
+            border-color: var(--red-accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .brand h1 {
+                font-size: 2.2rem;
+            }
+
+            .claw-ascii {
+                font-size: 10px;
+            }
+
+            .tagline {
+                font-size: 1.1rem;
+            }
+
+            .terminal-body {
+                font-size: 0.75rem;
+            }
+
+            .status-row {
+                flex-direction: column;
+            }
+
+            .two-threats {
+                grid-template-columns: 1fr;
+            }
+
+            .threat-divider {
+                width: 100%;
+                height: 40px;
+                flex-direction: row;
+            }
+
+            .threat-divider .pipe {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <div class="logo-area">
+            <div class="claw-ascii" aria-hidden="true"><span class="red">    ___       ___</span>
+<span class="red">   /   \     /   \</span>
+<span class="red">  |     |   |     |</span>
+<span class="dim">   \   </span><span class="green"> _</span><span class="dim">\ /</span><span class="green">_</span><span class="dim">   /</span>
+<span class="dim">    | </span><span class="green">|     |</span><span class="dim"> |</span>
+<span class="dim">    | </span><span class="green">|  *  |</span><span class="dim"> |</span>
+<span class="dim">     \</span><span class="green">|_____|</span><span class="dim">/</span></div>
+
+            <div class="brand">
+                <h1>FrawdBot</h1>
+                <span class="dot-ai">.ai</span>
+            </div>
+
+            <p class="tagline">
+                <strong>Insider threat detection</strong> for Google Workspace and AI Agents.<br>
+                <span class="tagline-sub">Who watches the agents?</span>
+            </p>
+        </div>
+
+        <div class="terminal">
+            <div class="terminal-bar">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot yellow"></div>
+                <div class="terminal-dot green"></div>
+                <span class="terminal-title">frawdbot --status</span>
+            </div>
+            <div class="terminal-body">
+                <div><span class="prompt">$</span> <span class="cmd">frawdbot --status</span></div>
+                <div>&nbsp;</div>
+                <div><span class="output">FrawdBot v0.2</span></div>
+                <div><span class="output">Monitoring:</span> <span class="highlight">workspace + agents</span></div>
+                <div><span class="output">Detection engine:</span> <span class="highlight">ACTIVE</span></div>
+                <div><span class="output">Human rules:</span> <span class="highlight">ACTIVE</span></div>
+                <div><span class="output">Agent rules:</span> <span class="highlight">ACTIVE</span> <span class="output">(4 rules)</span></div>
+                <div><span class="output">Campaign detection:</span> <span class="highlight">ACTIVE</span></div>
+                <div>&nbsp;</div>
+                <div><span class="prompt">$</span> <span class="cursor"></span></div>
+            </div>
+        </div>
+
+        <div class="touch-controls" id="touchControls">
+            <div class="touch-btn" id="btnLeft">&larr;</div>
+            <div class="touch-btn fire" id="btnFire">FIRE</div>
+            <div class="touch-btn" id="btnRight">&rarr;</div>
+            <div class="touch-btn quit" id="btnQuit">ESC</div>
+        </div>
+
+        <div class="two-threats">
+            <div class="threat-panel human">
+                <h3>Human Insiders</h3>
+                <p>Unauthorized data access, privilege escalation, anomalous activity patterns -- caught in minutes, not months.</p>
+            </div>
+            <div class="threat-divider"><span class="pipe">&#9475;</span><span class="divider-icon">&#129438;</span><span class="pipe">&#9475;</span></div>
+            <div class="threat-panel agent">
+                <h3>Agent Insiders</h3>
+                <p>Scope escalation, data exfiltration, anomalous behavior, multi-agent coordination -- monitored at machine speed.</p>
+            </div>
+        </div>
+
+        <div class="status-row">
+            <div class="status-badge">
+                <div class="dot green"></div>
+                <span class="label">Engine</span>
+                <span class="value">v0.2</span>
+            </div>
+            <div class="status-badge">
+                <div class="dot green"></div>
+                <span class="label">Tests</span>
+                <span class="value">1,470 passing</span>
+            </div>
+            <div class="status-badge">
+                <div class="dot orange"></div>
+                <span class="label">Public Beta</span>
+                <span class="value">Coming Soon</span>
+            </div>
+        </div>
+
+        <div class="cta">
+            <p>
+                FrawdBot monitors your Google Workspace audit logs and AI agent behavior,
+                automatically detecting insider threats before they become breaches.
+                Unauthorized access, privilege escalation, data exfiltration,
+                coordinated campaigns -- caught in minutes, not months.
+            </p>
+            <p>
+                Part of the <strong>OpenClaw</strong> ecosystem.
+                Built by <strong>Self-Improving Code</strong>.
+            </p>
+            <a href="https://selfimprovingcode.ai" class="cta-link">
+                selfimprovingcode.ai &rarr;
+            </a>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-brand">
+                <a href="https://selfimprovingcode.ai">Self-Improving Code</a>
+                <a href="https://openclaw.ai">OpenClaw</a>
+            </div>
+            <div class="footer-right">Austin, TX &middot; 2026</div>
+        </footer>
+    </div>
+    <script>
+    // FrawdBot Defense — a hidden game inside the terminal
+    (function() {
+        console.log('%c\ud83e\udd9e FrawdBot v0.2', 'color:#e67e22;font-size:16px;font-weight:bold');
+        console.log('%cfrawdbot.play() %c\u2190 try this', 'color:#2ecc71;font-family:monospace', 'color:#7d8590');
+
+        var W, H;
+        var state, loop, keys = {}, termBody, termTitle, origHTML, origTitle, touchEl;
+
+        var TYPES = [
+            { ch: '[H]', cls: 'alert', pts: 10 },
+            { ch: '[A]', cls: 'warn', pts: 20 },
+            { ch: '{T}', cls: 'highlight', pts: 30 }
+        ];
+
+        function start() {
+            termBody = document.querySelector('.terminal-body');
+            termTitle = document.querySelector('.terminal-title');
+            if (!termBody) return;
+            origHTML = termBody.innerHTML;
+            origTitle = termTitle.textContent;
+            termTitle.textContent = 'frawdbot --defend';
+            termBody.style.whiteSpace = 'pre';
+            termBody.style.lineHeight = '1.3';
+            termBody.style.overflow = 'hidden';
+            termBody.addEventListener('click', onTermTap);
+
+            // measure actual character width
+            var ruler = document.createElement('span');
+            ruler.style.visibility = 'hidden';
+            ruler.style.whiteSpace = 'pre';
+            ruler.textContent = 'X'.repeat(100);
+            termBody.appendChild(ruler);
+            var charW = ruler.offsetWidth / 100;
+            termBody.removeChild(ruler);
+            var usable = termBody.clientWidth - parseFloat(getComputedStyle(termBody).paddingLeft) - parseFloat(getComputedStyle(termBody).paddingRight);
+            W = Math.min(70, Math.floor(usable / charW));
+            H = 16;
+
+            state = {
+                px: Math.floor(W / 2) - 1,
+                enemies: [],
+                bullets: [],
+                ebullets: [],
+                booms: [],
+                score: 0,
+                lives: 3,
+                over: false,
+                won: false,
+                dir: 1,
+                tick: 0,
+                freq: 8,
+                lvl: 1
+            };
+            spawn();
+            document.addEventListener('keydown', kd);
+            document.addEventListener('keyup', ku);
+
+            // touch controls
+            touchEl = document.getElementById('touchControls');
+            if (touchEl) {
+                touchEl.classList.add('active');
+                wireTouch('btnLeft', 'ArrowLeft');
+                wireTouch('btnRight', 'ArrowRight');
+                wireTouch('btnFire', ' ');
+                var qb = document.getElementById('btnQuit');
+                if (qb) qb.addEventListener('touchstart', stopTouch);
+                if (qb) qb.addEventListener('click', stopTouch);
+            }
+
+            loop = setInterval(tick, 80);
+            render();
+        }
+
+        function wireTouch(id, key) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('touchstart', function(e) { e.preventDefault(); keys[key] = true; el.classList.add('pressed'); });
+            el.addEventListener('touchend', function(e) { e.preventDefault(); keys[key] = false; el.classList.remove('pressed'); });
+            el.addEventListener('touchcancel', function() { keys[key] = false; el.classList.remove('pressed'); });
+            el.addEventListener('mousedown', function() { keys[key] = true; el.classList.add('pressed'); });
+            el.addEventListener('mouseup', function() { keys[key] = false; el.classList.remove('pressed'); });
+            el.addEventListener('mouseleave', function() { keys[key] = false; el.classList.remove('pressed'); });
+        }
+
+        function stopTouch(e) { if (e) e.preventDefault(); stop(); }
+
+        function stop() {
+            clearInterval(loop);
+            document.removeEventListener('keydown', kd);
+            document.removeEventListener('keyup', ku);
+            keys = {};
+            if (termBody) {
+                termBody.removeEventListener('click', onTermTap);
+                termBody.innerHTML = origHTML;
+                termBody.style.whiteSpace = '';
+                termBody.style.lineHeight = '';
+                termBody.style.overflow = '';
+            }
+            if (termTitle) termTitle.textContent = origTitle;
+            if (touchEl) touchEl.classList.remove('active');
+            state = null;
+        }
+
+        function spawn() {
+            state.enemies = [];
+            var cols = Math.floor((W - 6) / 5);
+            var offset = Math.floor((W - cols * 5) / 2);
+            for (var r = 0; r < 3; r++) {
+                for (var i = 0; i < cols; i++) {
+                    state.enemies.push({ x: offset + i * 5, y: r * 2 + 1, type: TYPES[r], alive: true });
+                }
+            }
+        }
+
+        function kd(e) {
+            keys[e.key] = true;
+            if (['ArrowLeft','ArrowRight','ArrowUp',' '].indexOf(e.key) >= 0) e.preventDefault();
+            if (e.key === 'Escape') stop();
+            if (state && state.over && e.key === 'Enter') restart();
+        }
+
+        function restart() { stop(); start(); }
+
+        function onTermTap() {
+            if (state && state.over) restart();
+        }
+
+        function ku(e) { keys[e.key] = false; }
+
+        function tick() {
+            if (!state || state.over) return;
+            state.tick++;
+
+            // player move
+            if (keys['ArrowLeft'] || keys['a']) state.px = Math.max(0, state.px - 1);
+            if (keys['ArrowRight'] || keys['d']) state.px = Math.min(W - 3, state.px + 1);
+
+            // shoot (one bullet at a time above row H-6)
+            if (keys[' '] || keys['ArrowUp']) {
+                if (!state.bullets.some(function(b) { return b.y > H - 6; })) {
+                    state.bullets.push({ x: state.px + 1, y: H - 3 });
+                }
+                keys[' '] = false;
+                keys['ArrowUp'] = false;
+            }
+
+            // move bullets
+            state.bullets = state.bullets.filter(function(b) { b.y--; return b.y >= 0; });
+            state.ebullets = state.ebullets.filter(function(b) { b.y++; return b.y < H; });
+
+            // enemy movement
+            if (state.tick % state.freq === 0) {
+                var hit = false;
+                state.enemies.forEach(function(e) {
+                    if (e.alive && (e.x + state.dir < 0 || e.x + state.dir > W - 3)) hit = true;
+                });
+                state.enemies.forEach(function(e) {
+                    if (!e.alive) return;
+                    if (hit) e.y++;
+                    else e.x += state.dir;
+                });
+                if (hit) state.dir *= -1;
+
+                // enemy fire
+                var alive = state.enemies.filter(function(e) { return e.alive; });
+                if (alive.length > 0 && Math.random() < 0.3) {
+                    var s = alive[Math.floor(Math.random() * alive.length)];
+                    state.ebullets.push({ x: s.x + 1, y: s.y + 1 });
+                }
+            }
+
+            // bullet-enemy collision
+            state.bullets.forEach(function(b) {
+                state.enemies.forEach(function(e) {
+                    if (!e.alive) return;
+                    if (b.y === e.y && b.x >= e.x && b.x <= e.x + 2) {
+                        e.alive = false;
+                        b.y = -1;
+                        state.score += e.type.pts;
+                        state.booms.push({ x: e.x, y: e.y, t: 3 });
+                    }
+                });
+            });
+
+            // enemy bullet hits player
+            state.ebullets.forEach(function(b) {
+                if (b.y >= H - 2 && b.x >= state.px && b.x <= state.px + 2) {
+                    state.lives--;
+                    b.y = H + 1;
+                    if (state.lives <= 0) { state.over = true; state.won = false; }
+                }
+            });
+
+            // enemies reach bottom
+            if (state.enemies.some(function(e) { return e.alive && e.y >= H - 3; })) {
+                state.over = true;
+                state.won = false;
+            }
+
+            // all dead = next level
+            if (!state.enemies.some(function(e) { return e.alive; })) {
+                state.lvl++;
+                state.freq = Math.max(3, state.freq - 1);
+                state.bullets = [];
+                state.ebullets = [];
+                spawn();
+            }
+
+            // decay explosions
+            state.booms = state.booms.filter(function(ex) { ex.t--; return ex.t > 0; });
+            render();
+        }
+
+        function render() {
+            if (!state) return;
+            var grid = [];
+            for (var y = 0; y < H; y++) {
+                grid[y] = [];
+                for (var x = 0; x < W; x++) grid[y][x] = { c: ' ', s: '' };
+            }
+
+            // enemies
+            state.enemies.forEach(function(e) {
+                if (!e.alive) return;
+                var ch = e.type.ch;
+                for (var i = 0; i < ch.length; i++) {
+                    if (e.x + i < W && e.y < H) grid[e.y][e.x + i] = { c: ch[i], s: e.type.cls };
+                }
+            });
+
+            // explosions
+            state.booms.forEach(function(ex) {
+                for (var i = 0; i < 3; i++) {
+                    if (ex.x + i < W && ex.y < H) grid[ex.y][ex.x + i] = { c: '*', s: 'alert' };
+                }
+            });
+
+            // bullets
+            state.bullets.forEach(function(b) {
+                if (b.y >= 0 && b.y < H && b.x < W) grid[b.y][b.x] = { c: '!', s: 'highlight' };
+            });
+
+            // enemy bullets
+            state.ebullets.forEach(function(b) {
+                if (b.y >= 0 && b.y < H && b.x < W) grid[b.y][b.x] = { c: 'v', s: 'alert' };
+            });
+
+            // player /V\ (the claw)
+            var py = H - 2;
+            if (state.px < W) grid[py][state.px] = { c: '/', s: 'warn' };
+            if (state.px + 1 < W) grid[py][state.px + 1] = { c: 'V', s: 'warn' };
+            if (state.px + 2 < W) grid[py][state.px + 2] = { c: '\\', s: 'warn' };
+
+            // build html
+            var h = '';
+            var hdr = 'FRAWDBOT DEFENSE  LVL' + state.lvl;
+            var sc = pad(state.score, 5);
+            h += s(hdr, 'warn') + gap(W - hdr.length - sc.length) + s(sc, 'highlight') + '\n';
+            h += s(rep('\u2500', W), 'output') + '\n';
+
+            for (var y = 0; y < H; y++) {
+                for (var x = 0; x < W; x++) {
+                    var cell = grid[y][x];
+                    h += cell.s ? s(esc(cell.c), cell.s) : esc(cell.c);
+                }
+                h += '\n';
+            }
+
+            h += s(rep('\u2500', W), 'output') + '\n';
+            var lv = 'LIVES: ';
+            for (var i = 0; i < state.lives; i++) lv += '\ud83e\udd9e';
+            var quit = '[ESC] Quit';
+            h += s(lv, 'output');
+            // lobster emoji is ~2 chars wide in monospace
+            var pad2 = W - 7 - (state.lives * 2) - quit.length;
+            h += gap(Math.max(1, pad2));
+            h += s(quit, 'output');
+
+            if (state.over) {
+                h += '\n\n';
+                if (state.won) {
+                    h += s('  THREATS NEUTRALIZED! SCORE: ' + state.score, 'highlight') + '\n';
+                } else {
+                    h += s('  BREACH DETECTED! SCORE: ' + state.score, 'alert') + '\n';
+                }
+                h += s('  [ENTER] or TAP to Play Again', 'output');
+            } else {
+                var isMobile = 'ontouchstart' in window;
+                if (isMobile) {
+                    h += '\n' + s('  Use buttons below to play', 'output');
+                } else {
+                    h += '\n' + s('  \u2190\u2192 Move  SPACE Shoot  ESC Quit', 'output');
+                }
+            }
+
+            termBody.innerHTML = h;
+        }
+
+        function s(t, cls) { return '<span class="' + cls + '">' + t + '</span>'; }
+        function esc(c) { return c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function gap(n) { return n > 0 ? ' '.repeat(n) : ''; }
+        function pad(v, n) { return String(v).padStart(n, '0'); }
+        function rep(c, n) { return c.repeat(n); }
+
+        // Triple-click the claw to activate
+        var clicks = 0, ct;
+        document.addEventListener('DOMContentLoaded', function() {
+            var claw = document.querySelector('.claw-ascii');
+            if (claw) {
+                claw.style.cursor = 'pointer';
+                claw.addEventListener('click', function() {
+                    clicks++;
+                    clearTimeout(ct);
+                    ct = setTimeout(function() { clicks = 0; }, 800);
+                    if (clicks >= 3) { clicks = 0; start(); }
+                });
+            }
+        });
+
+        window.frawdbot = window.frawdbot || {};
+        window.frawdbot.play = start;
+    })();
+    </script>
+</body>
+</html>
