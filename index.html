@@ -632,6 +632,15 @@
             { ch: '{T}', cls: 'highlight', pts: 30 }
         ];
 
+        var POWERUPS = [
+            { ch: '[FW]', cls: 'highlight', name: 'FIREWALL', effect: 'shield', weight: 35 },
+            { ch: '[RS]', cls: 'warn', name: 'RAPID SCAN', effect: 'rapid', weight: 30 },
+            { ch: '[DLP]', cls: 'highlight', name: 'DLP', effect: 'spread', weight: 30 },
+            { ch: '[2FA]', cls: 'alert', name: '2FA', effect: 'life', weight: 5 }
+        ];
+        var DROP_CHANCE = 0.15;
+        var POWERUP_DURATION = 75;
+
         function start() {
             termBody = document.querySelector('.terminal-body');
             termTitle = document.querySelector('.terminal-title');
@@ -662,6 +671,7 @@
                 bullets: [],
                 ebullets: [],
                 booms: [],
+                powerups: [],
                 score: 0,
                 lives: 3,
                 over: false,
@@ -669,7 +679,12 @@
                 dir: 1,
                 tick: 0,
                 freq: 8,
-                lvl: 1
+                lvl: 1,
+                shield: false,
+                rapid: 0,
+                spread: 0,
+                flashMsg: '',
+                flashTick: 0
             };
             spawn();
             document.addEventListener('keydown', kd);
@@ -755,17 +770,32 @@
             if (keys['ArrowLeft'] || keys['a']) state.px = Math.max(0, state.px - 1);
             if (keys['ArrowRight'] || keys['d']) state.px = Math.min(W - 3, state.px + 1);
 
-            // shoot (one bullet at a time above row H-6)
+            // shoot
             if (keys[' '] || keys['ArrowUp']) {
-                if (!state.bullets.some(function(b) { return b.y > H - 6; })) {
-                    state.bullets.push({ x: state.px + 1, y: H - 3 });
+                var canShoot = state.rapid > 0
+                    ? !state.bullets.some(function(b) { return b.y > H - 4; })
+                    : !state.bullets.some(function(b) { return b.y > H - 6; });
+                if (canShoot) {
+                    if (state.spread > 0) {
+                        state.bullets.push({ x: state.px + 1, y: H - 3, dx: 0 });
+                        state.bullets.push({ x: state.px, y: H - 3, dx: -1 });
+                        state.bullets.push({ x: state.px + 2, y: H - 3, dx: 1 });
+                    } else {
+                        state.bullets.push({ x: state.px + 1, y: H - 3, dx: 0 });
+                    }
                 }
-                keys[' '] = false;
-                keys['ArrowUp'] = false;
+                if (state.rapid <= 0) {
+                    keys[' '] = false;
+                    keys['ArrowUp'] = false;
+                }
             }
 
             // move bullets
-            state.bullets = state.bullets.filter(function(b) { b.y--; return b.y >= 0; });
+            state.bullets = state.bullets.filter(function(b) {
+                b.y--;
+                b.x += (b.dx || 0);
+                return b.y >= 0 && b.x >= 0 && b.x < W;
+            });
             state.ebullets = state.ebullets.filter(function(b) { b.y++; return b.y < H; });
 
             // enemy movement
@@ -798,6 +828,17 @@
                         b.y = -1;
                         state.score += e.type.pts;
                         state.booms.push({ x: e.x, y: e.y, t: 3 });
+                        // power-up drop
+                        if (Math.random() < DROP_CHANCE) {
+                            var roll = Math.random() * 100, cum = 0;
+                            for (var p = 0; p < POWERUPS.length; p++) {
+                                cum += POWERUPS[p].weight;
+                                if (roll < cum) {
+                                    state.powerups.push({ x: e.x, y: e.y, type: POWERUPS[p], tick: 0 });
+                                    break;
+                                }
+                            }
+                        }
                     }
                 });
             });
@@ -805,11 +846,47 @@
             // enemy bullet hits player
             state.ebullets.forEach(function(b) {
                 if (b.y >= H - 2 && b.x >= state.px && b.x <= state.px + 2) {
-                    state.lives--;
+                    if (state.shield) {
+                        state.shield = false;
+                        state.flashMsg = '-FIREWALL';
+                        state.flashTick = 20;
+                    } else {
+                        state.lives--;
+                        if (state.lives <= 0) { state.over = true; state.won = false; }
+                    }
                     b.y = H + 1;
-                    if (state.lives <= 0) { state.over = true; state.won = false; }
                 }
             });
+
+            // move power-ups down and check collection
+            state.powerups = state.powerups.filter(function(p) {
+                p.tick++;
+                if (p.tick % 2 === 0) p.y++;
+                if (p.y >= H) return false;
+                // collision with player
+                if (p.y >= H - 2 && p.x + p.type.ch.length > state.px && p.x < state.px + 3) {
+                    if (p.type.effect === 'shield') {
+                        state.shield = true;
+                    } else if (p.type.effect === 'rapid') {
+                        state.rapid = POWERUP_DURATION;
+                        state.spread = 0;
+                    } else if (p.type.effect === 'spread') {
+                        state.spread = POWERUP_DURATION;
+                        state.rapid = 0;
+                    } else if (p.type.effect === 'life') {
+                        state.lives = Math.min(5, state.lives + 1);
+                    }
+                    state.flashMsg = '+' + p.type.name;
+                    state.flashTick = 20;
+                    return false;
+                }
+                return true;
+            });
+
+            // decay timed power-ups
+            if (state.rapid > 0) state.rapid--;
+            if (state.spread > 0) state.spread--;
+            if (state.flashTick > 0) state.flashTick--;
 
             // enemies reach bottom
             if (state.enemies.some(function(e) { return e.alive && e.y >= H - 3; })) {
@@ -823,6 +900,7 @@
                 state.freq = Math.max(3, state.freq - 1);
                 state.bullets = [];
                 state.ebullets = [];
+                state.powerups = [];
                 spawn();
             }
 
@@ -865,11 +943,28 @@
                 if (b.y >= 0 && b.y < H && b.x < W) grid[b.y][b.x] = { c: 'v', s: 'alert' };
             });
 
-            // player /V\ (the claw)
+            // power-ups
+            state.powerups.forEach(function(p) {
+                var ch = p.type.ch;
+                for (var i = 0; i < ch.length; i++) {
+                    if (p.x + i < W && p.y >= 0 && p.y < H) {
+                        grid[p.y][p.x + i] = { c: ch[i], s: p.type.cls };
+                    }
+                }
+            });
+
+            // player — {V} if shielded, /V\ if not
             var py = H - 2;
-            if (state.px < W) grid[py][state.px] = { c: '/', s: 'warn' };
-            if (state.px + 1 < W) grid[py][state.px + 1] = { c: 'V', s: 'warn' };
-            if (state.px + 2 < W) grid[py][state.px + 2] = { c: '\\', s: 'warn' };
+            var pCls = state.rapid > 0 && state.tick % 4 < 2 ? 'alert' : 'warn';
+            if (state.shield) {
+                if (state.px < W) grid[py][state.px] = { c: '{', s: 'highlight' };
+                if (state.px + 1 < W) grid[py][state.px + 1] = { c: 'V', s: 'highlight' };
+                if (state.px + 2 < W) grid[py][state.px + 2] = { c: '}', s: 'highlight' };
+            } else {
+                if (state.px < W) grid[py][state.px] = { c: '/', s: pCls };
+                if (state.px + 1 < W) grid[py][state.px + 1] = { c: 'V', s: pCls };
+                if (state.px + 2 < W) grid[py][state.px + 2] = { c: '\\', s: pCls };
+            }
 
             // build html
             var h = '';
@@ -895,6 +990,11 @@
             var pad2 = W - 7 - (state.lives * 2) - quit.length;
             h += gap(Math.max(1, pad2));
             h += s(quit, 'output');
+
+            // flash message
+            if (state.flashTick > 0) {
+                h += '\n' + s('  ' + state.flashMsg, state.flashMsg.charAt(0) === '+' ? 'highlight' : 'alert');
+            }
 
             if (state.over) {
                 h += '\n\n';
