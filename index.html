@@ -299,6 +299,23 @@
             50% { opacity: 0; }
         }
 
+        .terminal-body.cli-mode {
+            cursor: text;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .cli-input {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+        }
+
+        .cli-line {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
         /* Status indicators */
         .status-row {
             display: flex;
@@ -542,17 +559,8 @@
                 <div class="terminal-dot green"></div>
                 <span class="terminal-title">frawdbot --status</span>
             </div>
-            <div class="terminal-body">
-                <div><span class="prompt">$</span> <span class="cmd">frawdbot --status</span></div>
-                <div>&nbsp;</div>
-                <div><span class="output">FrawdBot v0.2</span></div>
-                <div><span class="output">Monitoring:</span> <span class="highlight">workspace + agents</span></div>
-                <div><span class="output">Detection engine:</span> <span class="highlight">ACTIVE</span></div>
-                <div><span class="output">Human rules:</span> <span class="highlight">ACTIVE</span></div>
-                <div><span class="output">Agent rules:</span> <span class="highlight">ACTIVE</span></div>
-                <div><span class="output">Campaign detection:</span> <span class="highlight">ACTIVE</span></div>
-                <div>&nbsp;</div>
-                <div><span class="prompt">$</span> <span class="cursor"></span></div>
+            <div class="terminal-body" id="termBody">
+                <input class="cli-input" id="cliInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
             </div>
         </div>
 
@@ -642,15 +650,17 @@
         var POWERUP_DURATION = 75;
 
         function start() {
-            termBody = document.querySelector('.terminal-body');
+            termBody = document.getElementById('termBody') || document.querySelector('.terminal-body');
             termTitle = document.querySelector('.terminal-title');
             if (!termBody) return;
             origHTML = termBody.innerHTML;
             origTitle = termTitle.textContent;
             termTitle.textContent = 'frawdbot --defend';
+            termBody.classList.remove('cli-mode');
             termBody.style.whiteSpace = 'pre';
             termBody.style.lineHeight = '1.3';
             termBody.style.overflow = 'hidden';
+            termBody.innerHTML = '';
             termBody.addEventListener('click', onTermTap);
 
             // measure actual character width
@@ -726,7 +736,6 @@
             keys = {};
             if (termBody) {
                 termBody.removeEventListener('click', onTermTap);
-                termBody.innerHTML = origHTML;
                 termBody.style.whiteSpace = '';
                 termBody.style.lineHeight = '';
                 termBody.style.overflow = '';
@@ -734,6 +743,27 @@
             if (termTitle) termTitle.textContent = origTitle;
             if (touchEl) touchEl.classList.remove('active');
             state = null;
+
+            // return to CLI mode
+            if (cli.active && termBody) {
+                termBody.innerHTML = '';
+                var inp = document.createElement('input');
+                inp.className = 'cli-input';
+                inp.id = 'cliInput';
+                inp.type = 'text';
+                inp.autocomplete = 'off';
+                inp.setAttribute('autocapitalize', 'off');
+                inp.spellcheck = false;
+                termBody.appendChild(inp);
+                cli.input = inp;
+                cli.body = termBody;
+                termBody.classList.add('cli-mode');
+                cliPrint('<span class="output">Game over. Returning to terminal...</span>');
+                cliPrint('');
+                cliPrompt();
+                inp.addEventListener('keydown', cliKeydown);
+                inp.focus();
+            }
         }
 
         function spawn() {
@@ -1022,9 +1052,199 @@
         function pad(v, n) { return String(v).padStart(n, '0'); }
         function rep(c, n) { return c.repeat(n); }
 
-        // Triple-click the claw to activate
+        // ── Interactive CLI ──────────────────────────────────
+        var cli = {
+            history: [],
+            histIdx: -1,
+            commands: ['help', 'status', 'defend', 'scan', 'version', 'clear'],
+            input: null,
+            body: null,
+            active: false,
+            tabMatches: [],
+            tabIdx: -1,
+            tabPrefix: ''
+        };
+
+        function cliInit() {
+            cli.body = document.getElementById('termBody');
+            cli.input = document.getElementById('cliInput');
+            if (!cli.body || !cli.input) return;
+
+            cli.body.classList.add('cli-mode');
+
+            // initial status output
+            cliPrint('<span class="prompt">$</span> <span class="cmd">frawdbot --status</span>');
+            cliPrint('');
+            cliStatusOutput();
+            cliPrint('');
+            cliPrint('<span class="output">Type </span><span class="highlight">help</span><span class="output"> for commands</span>');
+            cliPrompt();
+
+            cli.body.addEventListener('click', function() {
+                if (!state) cli.input.focus();
+            });
+
+            cli.input.addEventListener('keydown', cliKeydown);
+            cli.active = true;
+        }
+
+        function cliPrint(html) {
+            var div = document.createElement('div');
+            div.className = 'cli-line';
+            div.innerHTML = html || '&nbsp;';
+            cli.body.insertBefore(div, cli.input);
+            cli.body.scrollTop = cli.body.scrollHeight;
+        }
+
+        function cliPrompt() {
+            var div = document.createElement('div');
+            div.className = 'cli-line';
+            div.id = 'cliPromptLine';
+            div.innerHTML = '<span class="prompt">$</span> <span class="cmd" id="cliDisplay"></span><span class="cursor"></span>';
+            cli.body.insertBefore(div, cli.input);
+            cli.body.scrollTop = cli.body.scrollHeight;
+            cli.input.value = '';
+            cli.histIdx = -1;
+            cli.tabMatches = [];
+            cli.tabIdx = -1;
+        }
+
+        function cliUpdateDisplay() {
+            var d = document.getElementById('cliDisplay');
+            if (d) d.textContent = cli.input.value;
+        }
+
+        function cliRemovePrompt() {
+            var p = document.getElementById('cliPromptLine');
+            if (p) p.remove();
+        }
+
+        function cliKeydown(e) {
+            if (state) return; // game is running
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var cmd = cli.input.value.trim().toLowerCase();
+                cliRemovePrompt();
+                cliPrint('<span class="prompt">$</span> <span class="cmd">' + cliEsc(cli.input.value) + '</span>');
+                if (cmd) {
+                    cli.history.push(cmd);
+                    if (cli.history.length > 20) cli.history.shift();
+                    cliExec(cmd);
+                }
+                cliPrompt();
+                cli.input.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (cli.history.length === 0) return;
+                if (cli.histIdx < 0) cli.histIdx = cli.history.length;
+                cli.histIdx = Math.max(0, cli.histIdx - 1);
+                cli.input.value = cli.history[cli.histIdx];
+                cliUpdateDisplay();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (cli.histIdx < 0) return;
+                cli.histIdx++;
+                if (cli.histIdx >= cli.history.length) {
+                    cli.histIdx = -1;
+                    cli.input.value = '';
+                } else {
+                    cli.input.value = cli.history[cli.histIdx];
+                }
+                cliUpdateDisplay();
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                var val = cli.input.value.toLowerCase();
+                if (cli.tabMatches.length === 0 || cli.tabPrefix !== val) {
+                    cli.tabPrefix = val;
+                    cli.tabMatches = cli.commands.filter(function(c) { return c.indexOf(val) === 0; });
+                    cli.tabIdx = -1;
+                }
+                if (cli.tabMatches.length > 0) {
+                    cli.tabIdx = (cli.tabIdx + 1) % cli.tabMatches.length;
+                    cli.input.value = cli.tabMatches[cli.tabIdx];
+                    cliUpdateDisplay();
+                }
+            } else {
+                cli.tabMatches = [];
+                cli.tabIdx = -1;
+                setTimeout(cliUpdateDisplay, 0);
+            }
+        }
+
+        function cliExec(cmd) {
+            if (cmd === 'help') {
+                cliPrint('');
+                cliPrint('<span class="highlight">Available commands:</span>');
+                cliPrint('  <span class="cmd">help</span>      <span class="output">Show this help message</span>');
+                cliPrint('  <span class="cmd">status</span>    <span class="output">Show FrawdBot system status</span>');
+                cliPrint('  <span class="cmd">defend</span>    <span class="output">Launch FrawdBot Defense game</span>');
+                cliPrint('  <span class="cmd">scan</span>      <span class="output">Run a workspace threat scan</span>');
+                cliPrint('  <span class="cmd">version</span>   <span class="output">Show version info</span>');
+                cliPrint('  <span class="cmd">clear</span>     <span class="output">Clear terminal</span>');
+                cliPrint('');
+            } else if (cmd === 'status') {
+                cliPrint('');
+                cliStatusOutput();
+                cliPrint('');
+            } else if (cmd === 'defend' || cmd === 'play') {
+                cliRemovePrompt();
+                start();
+                return;
+            } else if (cmd === 'scan') {
+                cliScan();
+                return;
+            } else if (cmd === 'version') {
+                cliPrint('<span class="output">FrawdBot v0.2 \u00b7 Built by Self-Improving Code</span>');
+            } else if (cmd === 'clear') {
+                // remove all cli-lines
+                var lines = cli.body.querySelectorAll('.cli-line');
+                for (var i = 0; i < lines.length; i++) lines[i].remove();
+            } else {
+                cliPrint('<span class="alert">frawdbot: command not found: ' + cliEsc(cmd) + '</span>');
+                cliPrint('<span class="output">Type </span><span class="highlight">help</span><span class="output"> for available commands.</span>');
+            }
+        }
+
+        function cliStatusOutput() {
+            cliPrint('<span class="output">FrawdBot v0.2</span>');
+            cliPrint('<span class="output">Monitoring:</span> <span class="highlight">workspace + agents</span>');
+            cliPrint('<span class="output">Detection engine:</span> <span class="highlight">ACTIVE</span>');
+            cliPrint('<span class="output">Human rules:</span> <span class="highlight">ACTIVE</span>');
+            cliPrint('<span class="output">Agent rules:</span> <span class="highlight">ACTIVE</span>');
+            cliPrint('<span class="output">Campaign detection:</span> <span class="highlight">ACTIVE</span>');
+        }
+
+        function cliScan() {
+            var steps = [
+                { t: 0, msg: '<span class="output">Scanning workspace audit logs...</span>' },
+                { t: 600, msg: '<span class="output">[</span><span class="highlight">########</span><span class="output">..........] 40%</span>' },
+                { t: 1200, msg: '<span class="output">[</span><span class="highlight">################</span><span class="output">..] 80%</span>' },
+                { t: 1800, msg: '<span class="output">[</span><span class="highlight">##################</span><span class="output">] 100%</span>' },
+                { t: 2200, msg: '' },
+                { t: 2400, msg: '<span class="highlight">Scan complete.</span> <span class="output">No threats detected. 0 anomalies.</span>' }
+            ];
+            steps.forEach(function(step) {
+                setTimeout(function() {
+                    cliPrint(step.msg);
+                    if (step.t === 2400) {
+                        cliPrint('');
+                        cliPrompt();
+                        cli.input.focus();
+                    }
+                }, step.t);
+            });
+        }
+
+        function cliEsc(t) {
+            return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ── Initialization ──────────────────────────────────
         var clicks = 0, ct;
         document.addEventListener('DOMContentLoaded', function() {
+            cliInit();
+
             var claw = document.querySelector('.claw-ascii');
             if (claw) {
                 claw.style.cursor = 'pointer';
