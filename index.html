@@ -11,8 +11,8 @@
         gtag('js', new Date());
         gtag('config', 'G-XY3X2YTYH6');
     </script>
-    <title>FrawdBot - Insider Threat Detection for Google Workspace and AI Agents</title>
-    <meta name="description" content="FrawdBot detects insider threats in Google Workspace and monitors AI agent behavior. Built by Self-Improving Code.">
+    <title>FrawdBot - Detecting AI-Accelerated Insider Threats</title>
+    <meta name="description" content="FrawdBot detects the two threats nobody else is covering: malicious insiders accelerating attacks with AI tools, and autonomous agents that become insider threats themselves. Launching on Google Workspace, Microsoft 365 in development.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -547,7 +547,8 @@
             </div>
 
             <p class="tagline">
-                <strong>Insider threat detection</strong> for Google Workspace and AI Agents.<br>
+                Detecting the <strong>two threats nobody else is covering</strong>:<br>
+                AI-accelerated insiders and autonomous agents gone wild.<br>
                 <span class="tagline-sub">Who watches the agents?</span>
             </p>
         </div>
@@ -573,13 +574,13 @@
 
         <div class="two-threats">
             <div class="threat-panel human">
-                <h3>Human Insiders</h3>
-                <p>Unauthorized data access, privilege escalation, anomalous activity patterns -- caught in minutes, not months.</p>
+                <h3>AI-Accelerated Insiders</h3>
+                <p>Malicious actors using Claude Code, Cursor, or automation platforms to exfiltrate entire codebases in a single session. The intent is human. The velocity is machine.</p>
             </div>
             <div class="threat-divider"><span class="pipe">&#9475;</span><span class="divider-icon">&#129438;</span><span class="pipe">&#9475;</span></div>
             <div class="threat-panel agent">
-                <h3>Agent Insiders</h3>
-                <p>Scope escalation, data exfiltration, anomalous behavior, multi-agent coordination -- monitored at machine speed.</p>
+                <h3>Agents Gone Wild</h3>
+                <p>Autonomous agents that drift beyond intent -- deleting emails, exposing API keys, following prompt-injected instructions from malicious documents. The agent becomes an insider threat to the very person who launched it.</p>
             </div>
         </div>
 
@@ -603,10 +604,11 @@
 
         <div class="cta">
             <p>
-                FrawdBot monitors your Google Workspace audit logs and AI agent behavior,
-                automatically detecting insider threats before they become breaches.
-                Unauthorized access, privilege escalation, data exfiltration,
-                coordinated campaigns -- caught in minutes, not months.
+                Traditional insider threat detection was built for human-speed attacks.
+                That era is over. FrawdBot is a 21,000-line Python detection engine
+                running 12 behavioral rules against rolling statistical baselines,
+                with campaign detection that connects the dots across weeks of activity.
+                Launching on Google Workspace, with Microsoft 365 integration in development.
             </p>
             <p>
                 Part of the <strong>OpenClaw</strong> ecosystem.
@@ -1077,6 +1079,7 @@
             cliPrint('');
             cliStatusOutput();
             cliPrint('');
+            cliPrint('<span class="output">Detecting AI-accelerated insiders + agents gone wild</span>');
             cliPrint('<span class="output">Type </span><span class="highlight">help</span><span class="output"> for commands</span>');
             cliPrompt();
 
@@ -1209,19 +1212,19 @@
 
         function cliStatusOutput() {
             cliPrint('<span class="output">FrawdBot v0.2</span>');
-            cliPrint('<span class="output">Monitoring:</span> <span class="highlight">workspace + agents</span>');
-            cliPrint('<span class="output">Detection engine:</span> <span class="highlight">ACTIVE</span>');
-            cliPrint('<span class="output">Human rules:</span> <span class="highlight">ACTIVE</span>');
-            cliPrint('<span class="output">Agent rules:</span> <span class="highlight">ACTIVE</span>');
+            cliPrint('<span class="output">Google Workspace:</span>  <span class="highlight">ACTIVE</span>');
+            cliPrint('<span class="output">Microsoft 365:</span>     <span class="warn">IN DEVELOPMENT</span>');
+            cliPrint('<span class="output">AI-accelerated:</span>    <span class="highlight">12 behavioral rules</span>');
+            cliPrint('<span class="output">Agent monitoring:</span>  <span class="highlight">ACTIVE</span>');
             cliPrint('<span class="output">Campaign detection:</span> <span class="highlight">ACTIVE</span>');
         }
 
         function cliScan() {
             var steps = [
                 { t: 0, msg: '<span class="output">Scanning workspace audit logs...</span>' },
-                { t: 600, msg: '<span class="output">[</span><span class="highlight">########</span><span class="output">..........] 40%</span>' },
-                { t: 1200, msg: '<span class="output">[</span><span class="highlight">################</span><span class="output">..] 80%</span>' },
-                { t: 1800, msg: '<span class="output">[</span><span class="highlight">##################</span><span class="output">] 100%</span>' },
+                { t: 600, msg: '<span class="output">[</span><span class="highlight">########</span><span class="output">..........] 40% — checking AI-accelerated patterns</span>' },
+                { t: 1200, msg: '<span class="output">[</span><span class="highlight">################</span><span class="output">..] 80% — analyzing agent behavior</span>' },
+                { t: 1800, msg: '<span class="output">[</span><span class="highlight">##################</span><span class="output">] 100% — running campaign detection</span>' },
                 { t: 2200, msg: '' },
                 { t: 2400, msg: '<span class="highlight">Scan complete.</span> <span class="output">No threats detected. 0 anomalies.</span>' }
             ];
