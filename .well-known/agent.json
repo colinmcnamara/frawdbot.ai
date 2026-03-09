@@ -3,8 +3,8 @@
   "description": "Insider threat detection for Google Workspace. Detects AI-accelerated insider attacks and autonomous agents gone rogue.",
   "url": "https://frawdbot.ai",
   "provider": {
-    "organization": "Colin McNamara LLC",
-    "url": "https://frawdbot.ai"
+    "organization": "Acquit AI",
+    "url": "https://acquit.ai"
   },
   "version": "0.2.0",
   "capabilities": {
