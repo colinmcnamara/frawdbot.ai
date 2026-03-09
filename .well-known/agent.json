@@ -32,6 +32,12 @@
       "agent_card": "https://acquit.ai/.well-known/agent.json"
     },
     {
+      "name": "Self-Improving Code",
+      "url": "https://selfimprovingcode.ai",
+      "relationship": "parent",
+      "agent_card": "https://selfimprovingcode.ai/.well-known/agent.json"
+    },
+    {
       "name": "Colin McNamara",
       "url": "https://colinmcnamara.com",
       "relationship": "creator",
