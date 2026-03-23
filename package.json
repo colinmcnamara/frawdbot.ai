@@ -1,0 +1,30 @@
+{
+  "name": "frawdbot.ai",
+  "version": "1.0.0",
+  "description": "FrawdBot - Insider threat detection for Google Workspace",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/colinmcnamara/frawdbot.ai.git"
+  },
+  "keywords": [],
+  "author": "Colin McNamara",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/colinmcnamara/frawdbot.ai/issues"
+  },
+  "homepage": "https://github.com/colinmcnamara/frawdbot.ai#readme",
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.1",
+    "@astrojs/vercel": "^10.0.2",
+    "astro": "^6.0.8",
+    "resend": "^6.9.4",
+    "zod": "^4.3.6"
+  }
+}
