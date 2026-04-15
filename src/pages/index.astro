@@ -100,9 +100,9 @@ const clawArt = `<span class="red">    ___       ___</span>
             filter: drop-shadow(0 0 8px rgba(230, 126, 34, 0.3));
         }
 
-        .claw-ascii .red { color: var(--claw-red); }
-        .claw-ascii .green { color: var(--green); }
-        .claw-ascii .dim { color: var(--text-muted); }
+        .claw-ascii :global(.red) { color: var(--claw-red); }
+        .claw-ascii :global(.green) { color: var(--green); }
+        .claw-ascii :global(.dim) { color: var(--text-muted); }
 
         .brand {
             display: flex;
