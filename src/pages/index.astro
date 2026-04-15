@@ -1,5 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const clawArt = `<span class="red">    ___       ___</span>
+<span class="red">   /   \\     /   \\</span>
+<span class="red">  |     |   |     |</span>
+<span class="dim">   \\   </span><span class="green"> _</span><span class="dim">\\ /</span><span class="green">_</span><span class="dim">   /</span>
+<span class="dim">    | </span><span class="green">|     |</span><span class="dim"> |</span>
+<span class="dim">    | </span><span class="green">|  *  |</span><span class="dim"> |</span>
+<span class="dim">     \\</span><span class="green">|_____|</span><span class="dim">/</span>`;
 ---
 <Layout>
     <style>
@@ -518,13 +526,7 @@ import Layout from '../layouts/Layout.astro';
 
     <div class="container">
         <div class="logo-area">
-            <div class="claw-ascii" aria-hidden="true"><span class="red">    ___       ___</span>
-<span class="red">   /   \     /   \</span>
-<span class="red">  |     |   |     |</span>
-<span class="dim">   \   </span><span class="green"> _</span><span class="dim">\ /</span><span class="green">_</span><span class="dim">   /</span>
-<span class="dim">    | </span><span class="green">|     |</span><span class="dim"> |</span>
-<span class="dim">    | </span><span class="green">|  *  |</span><span class="dim"> |</span>
-<span class="dim">     \</span><span class="green">|_____|</span><span class="dim">/</span></div>
+            <div class="claw-ascii" aria-hidden="true" set:html={clawArt} />
 
             <div class="brand">
                 <h1>FrawdBot</h1>

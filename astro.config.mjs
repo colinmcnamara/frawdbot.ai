@@ -6,4 +6,5 @@ export default defineConfig({
   site: 'https://frawdbot.ai',
   adapter: vercel(),
   integrations: [sitemap()],
+  compressHTML: false,
 });
