@@ -21,10 +21,21 @@
   },
   "homepage": "https://github.com/colinmcnamara/frawdbot.ai#readme",
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.1",
-    "@astrojs/vercel": "^10.0.2",
-    "astro": "^6.0.8",
-    "resend": "^6.9.4",
-    "zod": "^4.3.6"
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/vercel": "^11.0.16",
+    "astro": "^7.4.2",
+    "resend": "^6.34.1",
+    "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "@vercel/routing-utils": {
+      "path-to-regexp": "6.3.0"
+    },
+    "@vercel/cli-config": {
+      "zod": "4.6.7"
+    }
   }
 }
